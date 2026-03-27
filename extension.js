@@ -95,25 +95,47 @@ game.import("extension", function () {
                                 return dialog;//返回对话框
                             },
                             backup: function (links, player) {//选择按钮后的备选方案
-                                return {//返回一个使用牌的事件
-                                    filterCard: () => false,//不需要选牌，如果改成f会导致使用技能全弃牌                                   
-                                    selectCard: -1,//不需要选择牌为代价
-                                    viewAs: {//视为使用牌
-                                        name: links[0][2],//牌名？
-                                        isCard: true,//是牌？
+
+                                return {
+                                    filterCard: () => false,
+                                    selectCard: -1,
+                                    viewAs: {
+                                        name: links[0][2],  // 'tao' 或 'wuxie'                     
+                                        isCard: true,
                                     },
-                                    popname: true,//显示牌名
-                                    precontent: function () {//使用牌前的处理
-                                        player.logSkill('shuiji1');//记录技能发动日志
-                                        player.addTempSkill('shuiji1_used', 'roundStart');//给玩家添加一轮一次的技能标记，防止多次发动，前缀下划线是全局的标签，否则北大技能用不了
+                                    popname: true,
+                                    precontent: function () {
+                                        player.logSkill('shuiji1');
+                                        player.addTempSkill('shuiji1_used', 'roundStart');
                                     },
+                                    // 不定义ai！让它自动继承viewAs牌的AI     
                                 }
-                            },
+                                    /*
+                                    return {//返回一个使用牌的事件
+                                        filterCard: () => false,//不需要选牌，如果改成f会导致使用技能全弃牌                                   
+                                        selectCard: -1,//不需要选择牌为代价
+                                        viewAs: {//视为使用牌
+                                            name: links[0][2],//牌名？
+                                            isCard: true,//是牌？
+                                        },
+                                        popname: true,//显示牌名
+                                        precontent: function () {//使用牌前的处理
+                                            player.logSkill('shuiji1');//记录技能发动日志
+                                            player.addTempSkill('shuiji1_used', 'roundStart');//给玩家添加一轮一次的技能标记，防止多次发动，前缀下划线是全局的标签，否则北大技能用不了
+                                        },
+                                    }
+                                    */
+                                },
                             prompt: function (links, player) {//选择按钮时的提示语
                                 return '水机：视为使用一张【' + get.translation(links[0][2]) + '】';
                             },
                         },
                         ai: {
+
+
+
+                            //原版桃直接超过来
+                            /*
                             basic: {//从原版桃抄的，基础部分。这里是权重方面
                                 order: (card, player) => {//pretao标签用的接口，某些技能用的
                                     if (player.hasSkillTag("pretao")) return 9;//如果在桃之前权重9
@@ -123,7 +145,7 @@ game.import("extension", function () {
                                     let player = _status.event.player;//检查场上的玩家
                                     if (!game.checkMod(card, player, "unchanged", "cardEnabled2", player))//检查一遍场上玩家挂的mod效果，如果这些效果需要桃，那么返回字符串unchange
                                         return 2 / (1 + i);//如果不需要桃，那么把桃的价值权重降到无限小
-
+ 
                                     let fs = game.filterPlayer((current) => {//敌我识别。游戏，玩家列表，当前角色
                                         //current只是表示当前角色
                                         return get.attitude(player, current) > 0 //态度大于0
@@ -139,7 +161,7 @@ game.import("extension", function () {
                                         if (f.hp > 3 //血量大于3
                                             || //或
                                             !lib.filter.cardSavable(card, player, f)) //这张牌（桃）够不到的（f）
-
+ 
                                             return;//有“！”意思是反向，也就是计数改为不计数
                                         
                                         if (f.hp > 1) damaged++;//如果血量大于1归为不需要救
@@ -147,7 +169,7 @@ game.import("extension", function () {
                                     });
                                     //这时候damaged是血量2的能救的友军数量。受伤
                                     //needs是血量1的能救的友军数量。濒死
-
+ 
                                     //下面是保留牌的最终权衡计算
                                     if (needs && damaged) //判断濒死和受伤都有时
                                         return 5 * needs + 3 * damaged;//计算权重，濒死权重*5受伤*3
@@ -189,7 +211,7 @@ game.import("extension", function () {
                                         return 3;//是的话3
                                     return 2;//不是的话2
                                 },
-                                target_use: (player, target, card) => {
+                                target_use: (player, target, card) => {//
                                     let mode = get.mode(),//获取游戏模式
                                         taos = player.getCards(
                                             "hs",//手牌范围
@@ -346,7 +368,7 @@ game.import("extension", function () {
                                 recover: 1,
                                 save: 1,
                             },
-
+*/
                         },
 
 
