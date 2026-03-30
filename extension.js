@@ -96,279 +96,35 @@ game.import("extension", function () {
                             },
                             backup: function (links, player) {//选择按钮后的备选方案
 
-                                return {
-                                    filterCard: () => false,
-                                    selectCard: -1,
-                                    viewAs: {
+                                return {//这其实是ai部分
+                                    filterCard: () => false,//不需要选牌，如果改成f会导致使用技能全弃牌 
+                                    selectCard: -1,//不需要选择牌为代价
+                                    viewAs: {//视为使用牌
                                         name: links[0][2],  // 'tao' 或 'wuxie'                     
-                                        isCard: true,
+                                        isCard: true,//是牌？
                                     },
-                                    popname: true,
+                                    popname: true,//显示牌名
                                     precontent: function () {
-                                        player.logSkill('shuiji1');
-                                        player.addTempSkill('shuiji1_used', 'roundStart');
+                                        player.logSkill('shuiji1');//记录技能发动日志
+                                        player.addTempSkill('shuiji1_used', 'roundStart');//给玩家添加一轮一次的技能标记，防止多次发动，前缀下划线是全局的标签，否则北大技能用不了
                                     },
-                                    // 不定义ai！让它自动继承viewAs牌的AI     
+                                    // 不定义ai，让它自动继承viewAs牌的AI  。有一个  viewAs就行 
                                 }
-                                    /*
-                                    return {//返回一个使用牌的事件
-                                        filterCard: () => false,//不需要选牌，如果改成f会导致使用技能全弃牌                                   
-                                        selectCard: -1,//不需要选择牌为代价
-                                        viewAs: {//视为使用牌
-                                            name: links[0][2],//牌名？
-                                            isCard: true,//是牌？
-                                        },
-                                        popname: true,//显示牌名
-                                        precontent: function () {//使用牌前的处理
-                                            player.logSkill('shuiji1');//记录技能发动日志
-                                            player.addTempSkill('shuiji1_used', 'roundStart');//给玩家添加一轮一次的技能标记，防止多次发动，前缀下划线是全局的标签，否则北大技能用不了
-                                        },
-                                    }
-                                    */
-                                },
+
+                            },
                             prompt: function (links, player) {//选择按钮时的提示语
                                 return '水机：视为使用一张【' + get.translation(links[0][2]) + '】';
                             },
                         },
                         ai: {
-
-
-
-                            //原版桃直接超过来
-                            /*
-                            basic: {//从原版桃抄的，基础部分。这里是权重方面
-                                order: (card, player) => {//pretao标签用的接口，某些技能用的
-                                    if (player.hasSkillTag("pretao")) return 9;//如果在桃之前权重9
-                                    return 2;//否则权重2
-                                },
-                                useful: (card, i) => {//考虑保留牌的部分，弃牌阶段用
-                                    let player = _status.event.player;//检查场上的玩家
-                                    if (!game.checkMod(card, player, "unchanged", "cardEnabled2", player))//检查一遍场上玩家挂的mod效果，如果这些效果需要桃，那么返回字符串unchange
-                                        return 2 / (1 + i);//如果不需要桃，那么把桃的价值权重降到无限小
- 
-                                    let fs = game.filterPlayer((current) => {//敌我识别。游戏，玩家列表，当前角色
-                                        //current只是表示当前角色
-                                        return get.attitude(player, current) > 0 //态度大于0
-                                        &&//且
-                                         current.hp <= 2;//血量小于2
-                                         //说明这个友军快死了
-                                    }),
-                                    //前面筛选了血量少于2的友军
-                                    //在这些血量少于2的友军中
-                                        damaged = 0,//不需要救的友军数量计数器重置。受伤
-                                        needs = 0;//需要救的友军数量计数器重置。濒死
-                                    fs.forEach((f) => {
-                                        if (f.hp > 3 //血量大于3
-                                            || //或
-                                            !lib.filter.cardSavable(card, player, f)) //这张牌（桃）够不到的（f）
- 
-                                            return;//有“！”意思是反向，也就是计数改为不计数
-                                        
-                                        if (f.hp > 1) damaged++;//如果血量大于1归为不需要救
-                                        else needs++;//血量不大于1救
-                                    });
-                                    //这时候damaged是血量2的能救的友军数量。受伤
-                                    //needs是血量1的能救的友军数量。濒死
- 
-                                    //下面是保留牌的最终权衡计算
-                                    if (needs && damaged) //判断濒死和受伤都有时
-                                        return 5 * needs + 3 * damaged;//计算权重，濒死权重*5受伤*3
-                                    if (needs + damaged > 1 || player.hasSkillTag("maixie")) //濒死和受伤大于1或者自己有卖血标签时
-                                        return 8;//留桃权重8
-                                        //前面都没拦下说明没人需要救
-                                    if (player.hp / player.maxHp < 0.7)//自己血量不足70%时
-                                        return 7 + Math.abs(player.hp / player.maxHp - 0.5);//血量百分比-0.5以后取绝对值。0.5就是个基准数，没实际意义
-                                    if (needs) //如果有濒死
-                                        return 7;//7权重
-                                    if (damaged) //如果有受伤
-                                        return Math.max(3, 7.8 - i);//手里桃越多权重越低，i是关于几张的基础权重，通过取权重和3的最大值实现最低权重3。7.8是基数。
-                                    return Math.max(1, 7.2 - i);//上面都没的话。桃越多越高，权重不低于1，7.2是基数
-                                },
-                                value: (card, player) => {//考虑牌的总体价值
-                                    let fs = game.filterPlayer((current) => {//还是盟友筛选
-                                        return get.attitude(_status.event.player, current) > 0;
-                                    }),
-                                        damaged = 0,//受伤
-                                        needs = 0;//濒死
-                                        //上面还是先定义变量
-                                    fs.forEach((f) => {//统计受伤
-                                        if (!player.canUse("tao", f)) return;//够不着
-                                        if (f.hp <= 1) needs++;//濒死的记录
-                                        else if (f.hp == 2) damaged++;//受伤的记录
-                                    });
-                                    if ((needs && damaged) || player.hasSkillTag("maixie"))//有濒死和受伤都有或者有卖血将
-                                        return Math.max(9, 5 * needs + 3 * damaged);//至少9。濒死*5受伤*3
-                                    if (needs || damaged > 1) return 8;//有濒死或者受伤大于1，8权重
-                                    //如果受伤大于1上面就截住了，所以喵能被下面截住只有一个受伤
-                                    if (damaged) return 7.5;//有受伤7.5权重
-                                    //上面把别人需要桃的都写了，没人需要桃就会落到这里。
-                                    return Math.max(5, 9.2 - player.hp);
-                                },
-                            },
-                            result: {//关于使用的决策
-                                target: (player, target) => {//评估对目标使用桃的收益
-                                    if (target.hasSkillTag("maixie")) //是否是卖血将
-                                        return 3;//是的话3
-                                    return 2;//不是的话2
-                                },
-                                target_use: (player, target, card) => {//
-                                    let mode = get.mode(),//获取游戏模式
-                                        taos = player.getCards(
-                                            "hs",//手牌范围
-                                            (i) =>
-                                                get.name(i) === "tao" &&
-                                                lib.filter.cardEnabled(i, target, "forceEnable")
-                                        );
-                                    if (target !== _status.event.dying) {
-                                        if (
-                                            !player.isPhaseUsing() ||
-                                            player.hasSkillTag(
-                                                "nokeep",
-                                                true,
-                                                {
-                                                    card: card,
-                                                    target: target,
-                                                },
-                                                true
-                                            )
-                                        )
-                                            return 2;
-                                        let min = 7.2 - (4 * player.hp) / player.maxHp,
-                                            nd = player.needsToDiscard(0, (i, player) => {
-                                                return (
-                                                    !player.canIgnoreHandcard(i) &&
-                                                    (taos.includes(i) || get.value(i) >= min)
-                                                );
-                                            }),
-                                            keep = nd ? 0 : 2;
-                                        if (
-                                            nd > 2 ||
-                                            (taos.length > 1 && (nd > 1 || (nd && player.hp < 1 + taos.length))) ||
-                                            (target.identity === "zhu" &&
-                                                (nd || target.hp < 3) &&
-                                                (mode === "identity" || mode === "versus" || mode === "chess")) ||
-                                            !player.hasFriend()
-                                        )
-                                            return 2;
-                                        if (
-                                            game.hasPlayer((current) => {
-                                                return (
-                                                    player !== current &&
-                                                    current.identity === "zhu" &&
-                                                    current.hp < 3 &&
-                                                    (mode === "identity" || mode === "versus" || mode === "chess") &&
-                                                    get.attitude(player, current) > 0
-                                                );
-                                            })
-                                        )
-                                            keep = 3;
-                                        else if (nd === 2 || player.hp < 2) return 2;
-                                        if (nd === 2 && player.hp <= 1) return 2;
-                                        if (keep === 3) return 0;
-                                        if (taos.length <= player.hp / 2) keep = 1;
-                                        if (
-                                            keep &&
-                                            game.countPlayer((current) => {
-                                                if (
-                                                    player !== current &&
-                                                    current.hp < 3 &&
-                                                    player.hp > current.hp &&
-                                                    get.attitude(player, current) > 2
-                                                ) {
-                                                    keep += player.hp - current.hp;
-                                                    return true;
-                                                }
-                                                return false;
-                                            })
-                                        ) {
-                                            if (keep > 2) return 0;
-                                        }
-                                        return 2;
-                                    }
-                                    if (target.isZhu2() || target === game.boss) return 2;
-                                    if (player !== target) {
-                                        if (target.hp < 0 && taos.length + target.hp <= 0) return 0;
-                                        if (Math.abs(get.attitude(player, target)) < 1) return 0;
-                                    }
-                                    if (!player.getFriends().length) return 2;
-                                    let tri = _status.event.getTrigger(),
-                                        num = game.countPlayer((current) => {
-                                            if (get.attitude(current, target) > 0)
-                                                return current.countCards(
-                                                    "hs",
-                                                    (i) =>
-                                                        get.name(i) === "tao" &&
-                                                        lib.filter.cardEnabled(i, target, "forceEnable")
-                                                );
-                                        }),
-                                        dis = 1,
-                                        t = _status.currentPhase || game.me;
-                                    while (t !== target) {
-                                        let att = get.attitude(player, t);
-                                        if (att < -2) dis++;
-                                        else if (att < 1) dis += 0.45;
-                                        t = t.next;
-                                    }
-                                    if (mode === "identity") {
-                                        if (tri && tri.name === "dying") {
-                                            if (target.identity === "fan") {
-                                                if (
-                                                    (!tri.source && player !== target) ||
-                                                    (tri.source &&
-                                                        tri.source !== target &&
-                                                        player.getFriends().includes(tri.source.identity))
-                                                ) {
-                                                    if (
-                                                        num > dis ||
-                                                        (player === target &&
-                                                            player.countCards("hs", { type: "basic" }) > 1.6 * dis)
-                                                    )
-                                                        return 2;
-                                                    return 0;
-                                                }
-                                            } else if (
-                                                tri.source &&
-                                                tri.source.isZhu &&
-                                                (target.identity === "zhong" || target.identity === "mingzhong") &&
-                                                (tri.source.countCards("he") > 2 ||
-                                                    (player === tri.source &&
-                                                        player.hasCard((i) => i.name !== "tao", "he")))
-                                            )
-                                                return 2;
-                                            //if(player!==target&&!target.isZhu&&target.countCards('hs')<dis) return 0;
-                                        }
-                                        if (player.identity === "zhu") {
-                                            if (
-                                                player.hp <= 1 &&
-                                                player !== target &&
-                                                taos + player.countCards("hs", "jiu") <=
-                                                Math.min(
-                                                    dis,
-                                                    game.countPlayer((current) => {
-                                                        return current.identity === "fan";
-                                                    })
-                                                )
-                                            )
-                                                return 0;
-                                        }
-                                    } else if (
-                                        mode === "stone" &&
-                                        target.isMin() &&
-                                        player !== target &&
-                                        tri &&
-                                        tri.name === "dying" &&
-                                        player.side === target.side &&
-                                        tri.source !== target.getEnemy()
-                                    )
-                                        return 0;
-                                    return 2;
-                                },
-                            },
                             tag: {
-                                recover: 1,
-                                save: 1,
+                                order: 10,//救人优先级
+                                result: { player: 1 },//对自己有利
+                                save: 1,      // 标记：这个技能能救人
+                                respond: 1,   // 标记：这个技能能响应（无懈）
+
+
                             },
-*/
                         },
 
 
@@ -390,9 +146,9 @@ game.import("extension", function () {
                         mod: {
                             cardnature: function (card, player, colo) {//要修改牌的属性
 
-                                if (card.name == "sha" || get.color(card) == "black")//当是杀或者是黑色牌时，执行处理
+                                if (card.name == "sha" && get.color(card) == "black")//当是杀是黑杀时，执行处理
                                     return card.nature = "thunder"; //处理的内容，把黑色的杀改成鱼雷属性.
-                                if (card.name == "sha" || get.color(card) == "red")//当是杀或者是红色牌时，执行处理
+                                if (card.name == "sha" && get.color(card) == "red")//当是杀是红杀时，执行处理
                                     return card.nature = "fire"; //处理的内容，把红色的杀改成火属性.
                                 return card.nature;//否则返回原属性
                             },
